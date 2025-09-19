@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>شركتي</title>
+<style>
+body { font-family: Arial; background: #222; color: #fff; text-align: center; padding: 50px; }
+.container { max-width: 400px; margin: auto; background: rgba(0,0,0,0.7); padding: 30px; border-radius: 15px; }
+input, button { padding: 12px; width: 100%; margin: 10px 0; border-radius: 8px; border: none; }
+button { cursor: pointer; background: #ffcc00; color: #000; font-weight: bold; }
+a { color: #ffcc00; text-decoration: underline; cursor: pointer; font-size: 14px; display: block; margin-top: 10px; }
+.hidden { display: none; }
+#message { min-height: 24px; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+<h1>شركتي</h1>
+
+<form id="loginForm">
+  <input type="email" id="loginEmail" placeholder="📧 البريد الإلكتروني" required>
+  <input type="password" id="loginPassword" placeholder="🔑 كلمة المرور" required>
+  <button type="submit">🚀 تسجيل الدخول</button>
+  <a id="forgotLink">هل نسيت كلمة المرور؟</a>
+</form>
+
+<form id="sendCodeForm" class="hidden">
+  <input type="email" id="recoveryEmail" placeholder="📧 أدخل بريدك" required>
+  <button type="submit">📩 طلب الكود</button>
+  <a id="backLoginFromCode">رجوع لتسجيل الدخول</a>
+</form>
+
+<form id="verifyCodeForm" class="hidden">
+  <input type="email" id="verifyEmail" placeholder="📧 بريدك" required>
+  <input type="text" id="codeInput" placeholder="🔑 أدخل الكود المرسل" required>
+  <input type="password" id="newPassword" placeholder="🛡️ كلمة مرور جديدة" required>
+  <button type="submit">✅ إعادة تعيين كلمة المرور</button>
+  <a id="backLoginFromVerify">رجوع لتسجيل الدخول</a>
+</form>
+
+<p id="message"></p>
+</div>
+
+<script>
+const loginForm = document.getElementById("loginForm");
+const sendCodeForm = document.getElementById("sendCodeForm");
+const verifyCodeForm = document.getElementById("verifyCodeForm");
+const message = document.getElementById("message");
+
+document.getElementById("forgotLink").addEventListener("click", () => {
+  loginForm.classList.add("hidden");
+  sendCodeForm.classList.remove("hidden");
+  message.innerText = "";
+});
+document.getElementById("backLoginFromCode").addEventListener("click", () => {
+  sendCodeForm.classList.add("hidden");
+  loginForm.classList.remove("hidden");
+});
+document.getElementById("backLoginFromVerify").addEventListener("click", () => {
+  verifyCodeForm.classList.add("hidden");
+  loginForm.classList.remove("hidden");
+});
+
+loginForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("loginEmail").value;
+  const password = document.getElementById("loginPassword").value;
+
+  const response = await fetch("/.netlify/functions/verifyCode", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password, login: true })
+  });
+
+  const result = await response.json();
+  message.innerText = result.message;
+});
+
+sendCodeForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("recoveryEmail").value;
+
+  const response = await fetch("/.netlify/functions/sendCode", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email })
+  });
+
+  const result = await response.json();
+  message.innerText = result.message;
+  if(result.success){
+    sendCodeForm.classList.add("hidden");
+    verifyCodeForm.classList.remove("hidden");
+    document.getElementById("verifyEmail").value = email;
+  }
+});
+
+verifyCodeForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("verifyEmail").value;
+  const enteredCode = document.getElementById("codeInput").value;
+  const newPassword = document.getElementById("newPassword").value;
+
+  const response = await fetch("/.netlify/functions/verifyCode", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, code: enteredCode, newPassword })
+  });
+
+  const result = await response.json();
+  message.innerText = result.message;
+});
+</script>
+</body>
+</html>
